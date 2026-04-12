@@ -30,13 +30,4 @@ buttonElement.addEventListener('click', async () => {
             'user_id': user?.id
         }])
         .select();
-
-    if (error) {
-        displayElement.textContent = `Error: ${error.message}`;
-        displayElement.style.color = 'red';
-    } else {
-        displayElement.textContent = `Successfully saved: ${value}`;
-        displayElement.style.color = 'green';
-        inputElement.value = '';
-    }
 });

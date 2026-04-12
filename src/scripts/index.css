@@ -1,0 +1,41 @@
+#mainBody{
+    display: flex;
+    flex-direction: row;
+    width: 100% ;
+    height: 600px;
+}
+
+.column{
+    display: flex;
+    flex-direction: column;
+    border-left: 1px solid black;
+    border-right: 1px solid black;
+    width: 25%;
+    height: inherit;
+    
+    justify-content: flex-start;
+    align-items: center;
+}
+
+.columnHeader{
+    border-bottom: 1px solid black;
+    width: 100%;
+    text-align: center;
+    margin: 0;
+}
+
+.columnItems{
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-start;
+    align-items: center;
+    width: 100%;
+    height: inherit;
+    background-color: #f4f4f4;
+    border: 1px solid #aaaaaa;
+}
+
+.item{
+    margin: 10px;   
+}
+
