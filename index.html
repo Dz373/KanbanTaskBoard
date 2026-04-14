@@ -9,26 +9,22 @@
   </head>
   
   <body>
-    <input type="text" id="input" placeholder="Enter XML or text..."></input>
-    <button id="btn">Submit</button>
-    <p id="output"></p>
+    <input type="text" id="titleInput" placeholder="Enter Title"></input>
 
     <div id="mainBody">
       <div class="column">
         <h3 class="columnHeader">To Do</h3>
+        <button id="createToDo" class="createTaskBtn">New Task</button>
 
         <div id="columnToDo" class="columnItems">
           
-          <div class="item" draggable="true">item 1</div>
-          <div class="item" draggable="true">item 2</div>
-          <div class="item" draggable="true">item 3</div>
-        
         </div>
 
       </div>
 
       <div class="column">
         <h3 class="columnHeader">In Progress</h3>
+        <button id="createInProgress" class="createTaskBtn">New Task</button>
 
         <div id="columnInProgress" class="columnItems">
           
@@ -38,6 +34,7 @@
 
       <div class="column">
         <h3 class="columnHeader">In Review</h3>
+        <button id="createInReview" class="createTaskBtn">New Task</button>
 
         <div id="columnInReview" class="columnItems">
 
@@ -47,6 +44,7 @@
 
       <div class="column">
         <h3 class="columnHeader">Done</h3>
+        <button id="createDone" class="createTaskBtn">New Task</button>
 
         <div id="columnDone" class="columnItems">
 
@@ -56,8 +54,7 @@
 
     </div>
 
-    <script type="module" src="src/scripts/app.ts"></script>
-    <script type="module" src="src/scripts/dragging.ts"></script>
+    <script type="module" src="src/scripts/app.tsx"></script>
   
   </body>
 </html>
