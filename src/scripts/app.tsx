@@ -1,143 +1,96 @@
-import React, { useState, useEffect } from 'react';
-import { createPortal } from 'react-dom'; // Import this!
-import { createRoot } from 'react-dom/client';
-import supabase from './supabaseClient';
-import TaskItem from './TaskItem';
+import React, { useEffect, useState } from 'react';
+import {
+  getCurrentUser,
+  fetchTasks,
+  createTask,
+  updateTaskStatus
+} from '../api/tasks';
+import Column from './column';
 
-const table = "test";
+const statuses = ["ToDo", "InProgress", "InReview", "Done"];
 
 const App = () => {
   const [tasks, setTasks] = useState<any[]>([]);
+  const [user, setUser] = useState<any>(null);
   const [loading, setLoading] = useState(true);
-  
-  function allowDrop(ev: DragEvent): void {
-    ev.preventDefault();
-  }
-  async function drop(ev: DragEvent){
-    ev.preventDefault();
-    const column = (ev.target as HTMLElement).closest(".columnItems") as HTMLElement;
-    const itemId = ev.dataTransfer?.getData("id");
-
-    if (column && itemId) {
-      const newStatus = column.id.replace("column", "");
-
-      const previousTasks = [...tasks];
-      setTasks(prev => prev.map(t => 
-        String(t.id) === itemId ? { ...t, status: newStatus } : t
-      ));
-
-      const { error } = await supabase
-        .from(table)
-        .update({ status: newStatus })
-        .eq('id', itemId);
-
-      if (error) {
-        console.error("Update failed, rolling back:", error.message);
-        setTasks(previousTasks);
-      }
-    }
-  }
-  function drag(ev: DragEvent): void {
-    const draggedItem = ev.target as HTMLElement;
-    ev.dataTransfer?.setData("id", draggedItem.id.split("_")[1]);
-  }
+  const [title, setTitle] = useState("");
 
   useEffect(() => {
-    const columns = document.querySelectorAll('.columnItems');
-    columns.forEach(col => {
-        col.addEventListener('dragover', allowDrop as any);
-        col.addEventListener('drop', drop as any);
-    });
+    const init = async () => {
+      const u = await getCurrentUser();
+      if (!u) return;
 
-    const initApp = async () => {
-      let { data: { user: currentUser } } = await supabase.auth.getUser();
+      setUser(u);
 
-      if (!currentUser) {
-        const { data: anonData } = await supabase.auth.signInAnonymously();
-        currentUser = anonData?.user;
-      }
-
-      if (!currentUser) 
-        return;
-
+      const data = await fetchTasks(u.id);
+      setTasks(data || []);
       setLoading(false);
 
-      const { data: initialTasks } = await supabase
-        .from(table)
-        .select('*')
-        .eq('user_id', currentUser.id);;
-      
-      if (initialTasks) 
-        setTasks(initialTasks);
-
-      const titleInput = document.getElementById('titleInput') as HTMLInputElement;
-      const buttons = document.querySelectorAll('.createTaskBtn');
-
-      const createTaskBtn = async (e: Event) => {
-        const btn = e.currentTarget as HTMLButtonElement;
-        const status = btn.id.replace("create", "");
-        const title = titleInput.value;
-        
-        if (!title.trim()) 
-          return;
-
-        const { data, error } = await supabase
-          .from(table)
-          .insert([{ 
-            title: title, 
-            status: status,
-            user_id: currentUser?.id 
-          }])
-          .select();
-
-        if (data) {
-          setTasks(prev => [...prev, data[0]]);
-          
-          titleInput.value = "";
-          console.log(data[0]);
-        }
-        if (error)
-          console.error(error.message);
-      };
-
-      buttons.forEach(btn => btn.addEventListener('click', createTaskBtn));
-
-      return () => {
-        columns.forEach(col => {
-          col.removeEventListener('dragover', allowDrop as any);
-          col.removeEventListener('drop', drop as any);
-        });
-        buttons.forEach(btn => btn.removeEventListener('click', createTaskBtn));
-      };
+      console.log(data);
     };
 
-    initApp();
+    init();
   }, []);
 
-  const getTasksByStatus = (status: string) => tasks.filter(t => t.status.toLowerCase() === status.toLowerCase());
-  
-  const renderPortal = (status: string) => {
-    const column = document.getElementById("column"+status);
-    if (!column) 
-      return null;
-
-    return createPortal(
-      getTasksByStatus(status).map(t => <TaskItem key={t.id} data={t} drag={drag as any} />),
-      column
-    );
+  const handleDragStart = (e: React.DragEvent, id: string) => {
+    e.dataTransfer.setData("id", id);
   };
 
-  if (loading) return <div>Loading</div>;
+  const handleDropTask = async (taskId: string, newStatus: string) => {
+    const prev = [...tasks];
+
+    setTasks(prevTasks =>
+      prevTasks.map(t =>
+        String(t.id) === taskId ? { ...t, status: newStatus } : t
+      )
+    );
+
+    try {
+      await updateTaskStatus(taskId, newStatus);
+    } catch (err) {
+      console.error("Rollback:", err);
+      setTasks(prev);
+    }
+  };
+
+  const handleCreate = async (status: string) => {
+    if (!title.trim() || !user) 
+      return;
+
+    try {
+      const newTask = await createTask(title, status, user.id);
+      setTasks(prev => [...prev, newTask]);
+      setTitle("");
+    } catch (err) {
+      console.error(err);
+    }
+  };
+
+  const getTasks = (status: string) =>
+    tasks.filter(t => t.status === status);
+
+  if (loading) return <div>Loading...</div>;
+
   return (
-    <>
-      {renderPortal('ToDo')}
-      {renderPortal('InProgress')}
-      {renderPortal('InReview')}
-      {renderPortal('Done')}
-    </>
+    <div id="mainBody">
+      {statuses.map(status => (
+          <div className="column" key={status}>
+            <h3 className="columnHeader">{status}</h3>
+
+            <button onClick={() => handleCreate(status)}>
+              New Task
+            </button>
+
+            <Column
+              status={status}
+              tasks={getTasks(status)}
+              onDropTask={handleDropTask}
+              onDragStart={handleDragStart}
+            />
+          </div>
+        ))}
+    </div>
   );
 };
 
-const container = document.createElement('div');
-document.body.appendChild(container); 
-createRoot(container).render(<App />);
+export default App;
