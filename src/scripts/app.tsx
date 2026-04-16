@@ -14,6 +14,10 @@ const App = () => {
   const [user, setUser] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [title, setTitle] = useState("");
+  const [description, setDescription] = useState("");
+  const [dueDate, setDueDate] = useState("");
+  const [showModal, setShowModal] = useState(false);
+  const [newStatus, setNewStatus] = useState<string | null>(null);
 
   useEffect(() => {
     const init = async () => {
@@ -25,8 +29,6 @@ const App = () => {
       const data = await fetchTasks(u.id);
       setTasks(data || []);
       setLoading(false);
-
-      console.log(data);
     };
 
     init();
@@ -53,14 +55,16 @@ const App = () => {
     }
   };
 
-  const handleCreate = async (status: string) => {
-    if (!title.trim() || !user) 
-      return;
+  const handleSubmit = async () => {
+    if (!title.trim() || !user || !newStatus) return;
 
     try {
-      const newTask = await createTask(title, status, user.id);
+      const newTask = await createTask(title, newStatus, user.id, description, dueDate);
       setTasks(prev => [...prev, newTask]);
+
       setTitle("");
+      setShowModal(false);
+      setNewStatus(null);
     } catch (err) {
       console.error(err);
     }
@@ -77,8 +81,11 @@ const App = () => {
           <div className="column" key={status}>
             <h3 className="columnHeader">{status}</h3>
 
-            <button onClick={() => handleCreate(status)}>
-              New Task
+            <button className="addTaskBtn" onClick={() => {
+              setNewStatus(status);
+              setShowModal(true);
+            }}>
+              + New Task
             </button>
 
             <Column
@@ -89,7 +96,33 @@ const App = () => {
             />
           </div>
         ))}
+
+        {showModal && (
+          <div className="modalOverlay">
+            <div className="modal">
+              <h2 id="modalHeader">Create Task</h2>
+
+              <input id="inputTitle"
+                onChange={(e) => setTitle(e.target.value)}
+                placeholder="Enter task title"/>
+              
+              <input id="inputDescription"
+                onChange={(e) => setDescription(e.target.value)}
+                placeholder="Enter task description"/>
+
+              <input type="date" id="inputDate" 
+                onChange={(e) => setDueDate(e.target.value)}
+                placeholder="Enter task due date" />
+
+              <div className="modalButtons">
+                <button onClick={() => setShowModal(false)}>Cancel</button>
+                <button onClick={handleSubmit}>Submit</button>
+              </div>
+            </div>
+          </div>
+        )}
     </div>
+    
   );
 };
 

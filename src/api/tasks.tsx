@@ -23,10 +23,10 @@ export const fetchTasks = async (userId: string) => {
   return data;
 };
 
-export const createTask = async (title: string, status: string, userId: string) => {
+export const createTask = async (title: string, status: string, userId: string, description: string, dueDate:string) => {
   const { data, error } = await supabase
     .from(table)
-    .insert([{ title, status, user_id: userId }])
+    .insert([{ title, status, user_id: userId, description, due_date: dueDate}])
     .select();
 
   if (error) throw error;
